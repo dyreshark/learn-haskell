@@ -1,6 +1,6 @@
 # Learn Haskell!
 Various mini-projects in Haskell. Many of which duplicate bits of 
-code that's already available. 
+code that are already available. 
 
 ## Why?
 So I have an excuse to become better at Haskell!
