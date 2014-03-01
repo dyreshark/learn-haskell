@@ -39,8 +39,8 @@ eqOrFailed _ _ = False
 
 -- Testing Internals
 prop_Comp2ComposesMethods a b = compfn a b == (a + b) * 2
-	where
-		compfn = (*2) `comp2` (+)
+    where
+        compfn = (*2) `comp2` (+)
 
 prop_WrapString2WrapsString :: String -> Char -> Char -> Bool
 prop_WrapString2WrapsString s c1 c2 = wrapString2 c1 c2 s == c1 : s ++ [c2]
@@ -66,62 +66,62 @@ toWs s = if any (not . isSpace) s then Nothing else Just (Whitespace s)
 
 toWs' :: String -> Whitespace 
 toWs' s = case toWs s of 
-	Nothing -> error $ "Could not convert " ++ show s ++ " to whitespace"
-	Just r -> r
+    Nothing -> error $ "Could not convert " ++ show s ++ " to whitespace"
+    Just r -> r
 
 fromWs :: Whitespace -> String
 fromWs (Whitespace s) = s
-	
+    
 joinWs :: [Whitespace] -> String
 joinWs = foldr (++) "" . map fromWs
 
 instance Arbitrary Whitespace where
-	arbitrary = elements wsElems
-		where
-			wsElems = map charToWs [' ', '\t', '\n', '\r', '\f', '\v', '\xa0']
-			charToWs = toWs' . (:[])
-	shrink _ = []
+    arbitrary = elements wsElems
+        where
+            wsElems = map charToWs [' ', '\t', '\n', '\r', '\f', '\v', '\xa0']
+            charToWs = toWs' . (:[])
+    shrink _ = []
 
 prop_DropWhitespaceConsumesAllWhitespace :: [Whitespace] -> String -> Bool
 prop_DropWhitespaceConsumesAllWhitespace ws s = parseResult `rightEq` expResult
-	where 
-		parseResult = runParser (dropWhitespace >> drain) fullString
-		expResult = dropWhile isSpace s
-		fullString = joinWs ws ++ s
+    where 
+        parseResult = runParser (dropWhitespace >> drain) fullString
+        expResult = dropWhile isSpace s
+        fullString = joinWs ws ++ s
 
 prop_DropTrailingWhitespaceDropsTrailingWhitespace :: [Whitespace] -> Bool
 prop_DropTrailingWhitespaceDropsTrailingWhitespace ws = parseResult `rightEq` c
-	where
-		parseResult = runParser parser parseStr
-		parser = dropTrailingWhitespace next >> next
-		parseStr = [c] ++ wsStr ++ [c]
-		wsStr = joinWs ws
-		c = 'X'
+    where
+        parseResult = runParser parser parseStr
+        parser = dropTrailingWhitespace next >> next
+        parseStr = [c] ++ wsStr ++ [c]
+        wsStr = joinWs ws
+        c = 'X'
 
 prop_ParseQuotedConsumesQuotes :: String -> Bool
 prop_ParseQuotedConsumesQuotes s = parseResult `rightEq` s
-	where
-		parseResult = runParser parser str
-		-- This will double-quote the string; this is desired behavior.
-		str = wrapQuote . show $ s
-		parser = parseQuoted parseByRead' :: TextParser String
+    where
+        parseResult = runParser parser str
+        -- This will double-quote the string; this is desired behavior.
+        str = wrapQuote . show $ s
+        parser = parseQuoted parseByRead' :: TextParser String
 
 -- q1: Left quote? q2: Right quote? 
 prop_ParseQuotedFailsOnMissingQuotes :: Bool -> Bool -> String -> Bool
 prop_ParseQuotedFailsOnMissingQuotes q1 q2 s = expResult `eqOrFailed` expResult
-	where 
-		expResult = if expSuccess then Right s else Left ""
-		expSuccess = and [q1, q2]
-		str = (quoteLeft . quoteRight . show) s
-		quoteLeft = if q1 then ('"':) else id
-		quoteRight = if q2 then (++"\"") else id
+    where 
+        expResult = if expSuccess then Right s else Left ""
+        expSuccess = and [q1, q2]
+        str = (quoteLeft . quoteRight . show) s
+        quoteLeft = if q1 then ('"':) else id
+        quoteRight = if q2 then (++"\"") else id
 
 -- Testing Json
 testReadWrite :: (Jsonable a) => (Eq a) => a -> Bool
 testReadWrite j = jsonPass j `rightEq` j
-	where
-		-- fromJust with no check because loud failure is best failure
-		jsonPass = readJson . writeJson
+    where
+        -- fromJust with no check because loud failure is best failure
+        jsonPass = readJson . writeJson
 
 prop_StringReadWriteSuccess :: String -> Bool
 prop_StringReadWriteSuccess = testReadWrite
@@ -152,20 +152,20 @@ prop_StringObjectReadWriteSuccess = testReadWrite
 -- Testing Json object/array with arbitrary spacing between elements
 prop_ReadArrayShouldAcceptArbitrarySpacing :: [Whitespace] -> [Integer] -> Bool
 prop_ReadArrayShouldAcceptArbitrarySpacing ws elems = readJson readStr `rightEq` elems
-	where
-		readStr = wrapBracket . join sep $ elemStrs
-		sep = ',' : wsSep
-		wsSep = joinWs ws
-		elemStrs = map writeJson elems 
+    where
+        readStr = wrapBracket . join sep $ elemStrs
+        sep = ',' : wsSep
+        wsSep = joinWs ws
+        elemStrs = map writeJson elems 
 
 -- Because I need to learn how to QuickCheck better, this will be a String->String mapping.
 prop_ReadObjectShouldAcceptArbitrarySpacing :: [Whitespace] -> [String] -> Bool
 prop_ReadObjectShouldAcceptArbitrarySpacing ws elems = readJson readStr `rightEq` elemTuples
-	where
-		readStr = wrapBrace . join sep $ elemStrs
-		sep = ',' : wsSep
-		wsSep = joinWs ws
-		elemStrs = map (\(a, b) -> show a ++ ":" ++ wsSep ++ show b) elemTuples
-		elemTuples = zip elems elems
+    where
+        readStr = wrapBrace . join sep $ elemStrs
+        sep = ',' : wsSep
+        wsSep = joinWs ws
+        elemStrs = map (\(a, b) -> show a ++ ":" ++ wsSep ++ show b) elemTuples
+        elemTuples = zip elems elems
 
 runTests = $quickCheckAll

@@ -13,8 +13,8 @@ runParser = fst `comp2` PolyPlain.runParser
 
 wrapString2 :: Char -> Char -> String -> String
 wrapString2 start end str = start : str ++ cend
-	where 
-		cend = [end]
+    where 
+        cend = [end]
 
 wrapString :: Char -> String -> String
 wrapString a = wrapString2 a a
@@ -33,10 +33,10 @@ matchQuote = PolyPlain.satisfy (=='"')
 
 dropWhitespace :: Parse.TextParser ()
 dropWhitespace = do 
-	m <- (PolyPlain.optional $ PolyPlain.satisfy isSpace)
-	case m of
-		Nothing -> return ()
-		Just _ -> dropWhitespace 
+    m <- (PolyPlain.optional $ PolyPlain.satisfy isSpace)
+    case m of
+        Nothing -> return ()
+        Just _ -> dropWhitespace 
 
 dropTrailingWhitespace :: Parse.TextParser a -> Parse.TextParser a
 dropTrailingWhitespace p = do { x <- p; dropWhitespace; return x; }
