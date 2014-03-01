@@ -24,10 +24,6 @@ class Jsonable a where
 
 	parser :: Parse.TextParser a
 
-
--- ignoreQuote :: Parse.TextParser 
--- ignoreQuote = do 
-
 instance Jsonable String where 
 	writeJson = show
 	parser = Parse.parseByRead "String"
@@ -56,24 +52,31 @@ instance Jsonable Bool where
 			firstToLower (x:xs) = toLower x:xs
 
 	-- A bit complicated because JSON bools are all lowercase
-	parser = Parse.parseByRead . firstToUpper =<< Parse.word
-		where 
-			firstToUpper (c:cs) = toUpper c : cs
+	parser = Parse.word >>= readJsonBool
+		where
+			readJsonBool s = case s of 
+								"true" -> return True
+								"false" -> return False
+								e -> fail $ "Expected true or false, got " ++ e
 
-
+-- [ele1, ele2, ele3, ...]
 instance (Jsonable a) => Jsonable (JsonArray a) where
 	writeJson = wrapBracket . join "," . map writeJson
 	parser = PolyBase.bracketSep lb sep rb parser
 		where 
-			lb = PolyPlain.satisfy (=='[')
-			sep = PolyPlain.satisfy (==',')
+			lb = satisfyAndDropWhitespace (=='[')
+			sep = satisfyAndDropWhitespace (==',')
 			rb = PolyPlain.satisfy (==']')
 
+-- {"name": val1, "name": val2, ...}
 instance (Jsonable a) => Jsonable (JsonObject a) where
 	writeJson = wrapBrace . join "," . map (\(a, b) -> writeJson a ++ ":" ++ writeJson b)
 	parser = PolyBase.bracketSep lb sep rb recordParser
 		where
-			recordParser = do { name <- parser; PolyPlain.satisfy (==':'); val <- parser; return (name, val) }
-			lb = PolyPlain.satisfy (=='{')
-			sep = PolyPlain.satisfy (==',')
+			recordParser = do 
+							 name <- parser
+							 satisfyAndDropWhitespace (==':')
+							 val <- parser; return (name, val) 
+			lb = satisfyAndDropWhitespace (=='{')
+			sep = satisfyAndDropWhitespace (==',')
 			rb = PolyPlain.satisfy (=='}')

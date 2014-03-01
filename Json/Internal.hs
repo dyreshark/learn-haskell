@@ -38,8 +38,11 @@ dropWhitespace = do
 		Nothing -> return ()
 		Just _ -> dropWhitespace 
 
-dropLeadingWhitespace :: Parse.TextParser a -> Parse.TextParser a
-dropLeadingWhitespace = (dropWhitespace >>)
+dropTrailingWhitespace :: Parse.TextParser a -> Parse.TextParser a
+dropTrailingWhitespace p = do { x <- p; dropWhitespace; return x; }
+
+satisfyAndDropWhitespace :: (Char -> Bool) -> Parse.TextParser Char
+satisfyAndDropWhitespace fn = dropTrailingWhitespace $ PolyPlain.satisfy fn
 
 parseQuoted :: Parse.TextParser a -> Parse.TextParser a
 parseQuoted parser = do { matchQuote; result <- parser; matchQuote; return result }
